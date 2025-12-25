@@ -3,6 +3,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import api, { setupTokenRefresh } from "@/lib/api";
+import { AxiosError } from "axios";
+
+// Define types for the response
+interface User {
+  id: number;
+  email: string;
+  name: string;
+  role?: string;
+}
+
+interface LoginResponse {
+  user: User;
+}
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -18,7 +32,7 @@ export default function LoginPage() {
     setError("");
     
     try {
-      const response = await api.post('/auth/login', {
+      const response = await api.post<LoginResponse>('/auth/login', {
         email,
         password
       });
@@ -36,9 +50,16 @@ export default function LoginPage() {
       // Redirect to dashboard
       router.push("/dashboard");
       
-    } catch (error: any) {
-      console.error("Login error:", error);
-      setError(error.response?.data?.message || "Invalid email or password");
+    } catch (err) {
+      console.error("Login error:", err);
+      
+      // Type-safe error handling
+      if (err instanceof AxiosError) {
+        const errorMessage = err.response?.data?.message || "Invalid email or password";
+        setError(errorMessage);
+      } else {
+        setError("An unexpected error occurred");
+      }
     } finally {
       setIsLoading(false);
     }
