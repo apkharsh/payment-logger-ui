@@ -4,7 +4,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://192.168.1.14:8080/:path*',
+        destination: `${process.env.API_BASE_URL}/:path*`,
       },
     ];
   },
