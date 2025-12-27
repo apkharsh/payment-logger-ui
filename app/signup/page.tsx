@@ -1,7 +1,21 @@
 "use client";
 
-import { log } from "console";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import api, { setupTokenRefresh } from "@/lib/api";
+import { AxiosError } from "axios";
+
+// Define types
+interface User {
+  id: number;
+  email: string;
+  name: string;
+  role?: string;
+}
+
+interface SignupResponse {
+  user: User;
+}
 
 export default function SignupPage() {
     const [formData, setFormData] = useState({
@@ -13,11 +27,13 @@ export default function SignupPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
     const [passwordStrength, setPasswordStrength] = useState({
         strength: "",
         color: "",
     });
     const [errors, setErrors] = useState({ confirmPassword: "" });
+    const router = useRouter();
 
     const calculatePasswordStrength = (password: string) => {
         if (password.length === 0) {
@@ -78,42 +94,41 @@ export default function SignupPage() {
         }
 
         setIsLoading(true);
+        setError("");
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
         try {
-            const response = await fetch("http://localhost:8080/auth/signup", {
-                // ✅ Added /auth
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    name: formData.fullName,
-                    email: formData.email,
-                    password: formData.password,
-                }),
+            const response = await api.post<SignupResponse>('/auth/signup', {
+                name: formData.fullName,
+                email: formData.email,
+                password: formData.password,
             });
 
-            if (!response.ok) {
-                throw new Error("Signup failed");
+            console.log("Signup successful:", response.data);
+
+            // Store user info in localStorage (NOT tokens - they're in cookies)
+            if (response.data.user) {
+                localStorage.setItem("user", JSON.stringify(response.data.user));
             }
 
-            const data = await response.json();
-            console.log("Signup successful:", data);
-            alert("Account created successfully!");
-            // Redirect or reset form as needed
-            // redirect to login page
-            window.location.href = "/login";
-        } catch (error) {
-            alert(
-                "Error creating account: " +
-                    (error instanceof Error ? error.message : "Unknown error")
-            );
-        }
-        console.log(formData);
+            // Start proactive token refresh (15 minutes = 900 seconds)
+            setupTokenRefresh(900);
 
-        setIsLoading(false);
+            // Redirect to dashboard
+            router.push("/dashboard");
+
+        } catch (err) {
+            console.error("Signup error:", err);
+
+            // Type-safe error handling
+            if (err instanceof AxiosError) {
+                const errorMessage = err.response?.data?.message || "Registration failed";
+                setError(errorMessage);
+            } else {
+                setError("An unexpected error occurred");
+            }
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -151,6 +166,16 @@ export default function SignupPage() {
                             Join us today and get started
                         </p>
                     </div>
+
+                    {/* Error Message */}
+                    {error && (
+                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                            <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p className="text-sm text-red-800">{error}</p>
+                        </div>
+                    )}
 
                     {/* Signup Form */}
                     <form onSubmit={handleSubmit} className="space-y-5">
@@ -535,7 +560,7 @@ export default function SignupPage() {
                     <p className="mt-6 text-center text-sm text-gray-600">
                         Already have an account?{" "}
                         <a
-                            href="login"
+                            href="/login"
                             className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
                         >
                             Sign in
