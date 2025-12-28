@@ -1,13 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import ChangePasswordModal from "@/components/modals/ChangePasswordModal";
 import { useAuth } from "@/context/AuthContext";
 
 export default function ProfilePage() {
-  const { user } = useAuth(); // ⭐ Only get user, no loading needed
+  const { user } = useAuth();
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
-  // ⭐ Generate initials for avatar
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -17,7 +19,6 @@ export default function ProfilePage() {
       .slice(0, 2);
   };
 
-  // ⭐ Generate consistent color from name
   const getAvatarColor = (name: string) => {
     const colors = [
       "bg-blue-500",
@@ -35,19 +36,16 @@ export default function ProfilePage() {
 
   return (
     <ProtectedRoute>
-      {user && ( // ⭐ Simple null check
+      {user && (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
           <Navbar currentPage="profile" />
 
           <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             {/* Profile Header Card */}
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
-              {/* Gradient Header Background */}
               <div className="h-32 bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600"></div>
 
-              {/* Profile Info */}
               <div className="px-6 pb-6">
-                {/* Avatar */}
                 <div className="flex items-end -mt-16 mb-4">
                   <div
                     className={`w-32 h-32 rounded-full ${getAvatarColor(
@@ -60,7 +58,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Name and Email */}
                 <div className="space-y-1">
                   <h1 className="text-3xl font-bold text-gray-900">
                     {user.name}
@@ -82,7 +79,6 @@ export default function ProfilePage() {
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* User ID */}
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-indigo-300 transition-colors">
                   <label className="block text-sm font-medium text-gray-500 mb-1">
                     User ID
@@ -92,7 +88,6 @@ export default function ProfilePage() {
                   </p>
                 </div>
 
-                {/* Email */}
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-indigo-300 transition-colors">
                   <label className="block text-sm font-medium text-gray-500 mb-1">
                     Email Address
@@ -102,7 +97,6 @@ export default function ProfilePage() {
                   </p>
                 </div>
 
-                {/* Name */}
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-indigo-300 transition-colors">
                   <label className="block text-sm font-medium text-gray-500 mb-1">
                     Full Name
@@ -110,7 +104,6 @@ export default function ProfilePage() {
                   <p className="text-base text-gray-900">{user.name}</p>
                 </div>
 
-                {/* Role */}
                 {user.role && (
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-indigo-300 transition-colors">
                     <label className="block text-sm font-medium text-gray-500 mb-1">
@@ -144,7 +137,10 @@ export default function ProfilePage() {
                   </svg>
                   Edit Profile
                 </button>
-                <button className="flex items-center justify-center px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors">
+                <button
+                  onClick={() => setShowPasswordModal(true)}
+                  className="flex items-center justify-center px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                >
                   <svg
                     className="w-5 h-5 mr-2"
                     fill="none"
@@ -163,6 +159,12 @@ export default function ProfilePage() {
               </div>
             </div>
           </main>
+
+          {/* Change Password Modal */}
+          <ChangePasswordModal
+            isOpen={showPasswordModal}
+            onClose={() => setShowPasswordModal(false)}
+          />
         </div>
       )}
     </ProtectedRoute>
