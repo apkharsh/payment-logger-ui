@@ -32,8 +32,8 @@ export default function ForgotPasswordPage() {
         sessionStorage.setItem("resetEmail", email);
         router.push("/verify-otp");
       } else {
-        const errorText = await response.text();
-        setError(errorText || "Failed to send OTP");
+        const errorText = await response.json();
+        setError(errorText.message || "Failed to send OTP");
       }
     } catch (err) {
       console.error("Error:", err);
